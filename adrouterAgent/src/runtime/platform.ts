@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, win32 } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   getWindowsSandboxUserStatus,
   parseWindowsBinShell,
@@ -15,6 +16,9 @@ export interface SandboxReadiness {
 }
 
 const WINDOWS_SETUP_COMMAND = 'npx @anthropic-ai/sandbox-runtime@0.0.65 windows-install';
+const SANDBOX_RUNTIME_ROOT = dirname(
+  dirname(fileURLToPath(import.meta.resolve('@anthropic-ai/sandbox-runtime')))
+);
 
 const ubuntuRestrictsUserNamespaces = (): boolean => {
   const path = '/proc/sys/kernel/apparmor_restrict_unprivileged_userns';
@@ -153,6 +157,9 @@ export const runtimeReadPaths = (
   const common = [
     workspaceRoot,
     temporaryHome,
+    // Linux seccomp execution uses a trusted native helper shipped with this
+    // package. Keep that dependency readable when the rest of / is denied.
+    SANDBOX_RUNTIME_ROOT,
     '/usr',
     '/bin',
     '/sbin',
