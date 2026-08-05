@@ -26,8 +26,11 @@ evidence from live/native evidence.
 
 ## Final repository state
 
-The exact Git commit and public remote verification are recorded in the final task handoff after the
-clean tree is committed and pushed.
+- Tested source commit: `ad0a76f` (`feat: package LaunchPad submission demo`).
+- Local repository: `/Users/ahmadzuhri/antigravity/launchpad/` on clean `main`.
+- Public remote: `https://github.com/HappyCool121/launchpad-submission-`.
+- The remote was confirmed public and empty before the first normal (non-force) push. `main` was
+  pushed successfully; the final documentation-only commit records these results.
 
 ## Intentionally not run
 

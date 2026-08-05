@@ -303,7 +303,7 @@ cd launchpad && npm run check:submission
 
 ### Status
 
-`in_progress`
+`done`
 
 ### Objective
 
@@ -315,10 +315,10 @@ then commit and push the exact verified state.
 - [x] Run all component typechecks/tests/builds and the offline cross-component fixture.
 - [x] Run secret, private-path, nested-Git, catalog, documentation, and repository-boundary scans.
 - [x] Review the final diff and remove temporary/debug/generated files.
-- [ ] Initialize/confirm `main`, commit the verified repository, and require a clean status.
-- [ ] Move the local repository to `/Users/ahmadzuhri/antigravity/launchpad/` if built in a writable
+- [x] Initialize/confirm `main`, commit the verified repository, and require a clean status.
+- [x] Move the local repository to `/Users/ahmadzuhri/antigravity/launchpad/` if built in a writable
       staging location.
-- [ ] Authenticate GitHub CLI if needed, configure the requested remote, push `main`, and verify the
+- [x] Authenticate GitHub CLI if needed, configure the requested remote, push `main`, and verify the
       public repository main page and anonymous file access.
 - [x] Record exact validation results and remaining risks in this plan and `docs/RESULTS.md`.
 
@@ -353,8 +353,8 @@ gh repo view HappyCool121/launchpad-submission-
 
 - [x] All offline checks pass and every skipped/live/native check has a documented reason.
 - [x] Secret scans find no credentials and the repository contains no nested Git metadata.
-- [ ] The final commit exactly matches the tested tree and local status is clean.
-- [ ] `main` is pushed to `HappyCool121/launchpad-submission-` and the repository main page is
+- [x] The final commit exactly matches the tested tree and local status is clean.
+- [x] `main` is pushed to `HappyCool121/launchpad-submission-` and the repository main page is
       publicly readable.
 - [x] No deploy, npm publish, tag, release, live provider call, or challenge-form mutation occurred.
 
@@ -362,7 +362,7 @@ gh repo view HappyCool121/launchpad-submission-
 
 - Full submission gate: passed across Router, CLI, Agent, and root checks; see `docs/RESULTS.md`.
 - Secret/private boundary scan: passed with known synthetic credential fixtures allowlisted narrowly.
-- GitHub push/public verification: not run; CLI authentication invalid during discovery.
+- GitHub push/public verification: passed; the public empty repository accepted `main` without a force push.
 
 ### Findings / Notes
 
