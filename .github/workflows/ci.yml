@@ -67,3 +67,9 @@ jobs:
           cache-dependency-path: adrouterAgent/package-lock.json
       - run: npm ci
       - run: npm run check:submission
+        env:
+          # Hosted runners install executable Git filters globally. The Agent
+          # intentionally fails closed when inherited filters are visible, so
+          # isolate its temporary-repository tests from runner-owned config.
+          GIT_CONFIG_GLOBAL: /dev/null
+          GIT_CONFIG_SYSTEM: /dev/null
