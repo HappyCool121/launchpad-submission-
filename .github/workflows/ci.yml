@@ -66,6 +66,8 @@ jobs:
           cache: npm
           cache-dependency-path: adrouterAgent/package-lock.json
       - run: npm ci
+      - name: Remove hosted-runner Git LFS filters
+        run: sudo git config --system --remove-section filter.lfs
       - run: mkdir -p /tmp/adrouter-agent-ci-home
       - run: npm run check:submission
         env:
