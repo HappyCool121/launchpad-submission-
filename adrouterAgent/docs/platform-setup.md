@@ -55,6 +55,7 @@ profile adrouter-agent-bwrap /usr/bin/bwrap flags=(unconfined) {
 Then load the profile:
 
 ```bash
+sudo install --mode=0644 config/apparmor/adrouter-agent-bwrap /etc/apparmor.d/adrouter-agent-bwrap
 sudo apparmor_parser -r /etc/apparmor.d/adrouter-agent-bwrap
 ```
 

@@ -69,6 +69,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes bubblewrap ripgrep socat
+          sudo install --mode=0644 config/apparmor/adrouter-agent-bwrap /etc/apparmor.d/adrouter-agent-bwrap
+          sudo apparmor_parser -r /etc/apparmor.d/adrouter-agent-bwrap
       - run: npm ci
       - name: Remove hosted-runner Git LFS filters
         run: sudo git config --system --remove-section filter.lfs
