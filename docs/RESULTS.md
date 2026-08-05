@@ -8,7 +8,7 @@ evidence from live/native evidence.
 - Source repository status and exact base SHAs were captured before export.
 - Ignored environment files, nested Git metadata, generated output, protected bundles, deployment
   workflows, release provenance, and publication helpers were excluded from the submission tree.
-- Root `npm run check:submission`: passed; 16 required documents/configs, 1,442 source files,
+- Root `npm run check:submission`: passed; 16 required documents/configs, 1,441 source files,
   818-word write-up, credential/private-path rules, and component boundary checks.
 - Router Node.js 22.19.0: typecheck, LaunchPad configuration test, offline fake-Agnes integration,
   complete backend test suite, and production TypeScript build passed. The integration proves four
@@ -26,9 +26,11 @@ evidence from live/native evidence.
 
 ## Final repository state
 
-- Tested source commit: `ad0a76f` (`feat: package LaunchPad submission demo`).
+- Verified implementation commit: `934c641` (`fix(agent): allow trusted sandbox runtime helper`).
 - Local repository: `/Users/ahmadzuhri/antigravity/launchpad/` on clean `main`.
 - Public remote: `https://github.com/HappyCool121/launchpad-submission-`.
+- GitHub Actions run `31022727609` passed all boundary, Router, CLI, and Agent jobs, including the
+  credential-free fake-Agnes path and Linux sandbox integration tests.
 - The remote was confirmed public and empty before the first normal (non-force) push. `main` was
   pushed successfully; the final documentation-only commit records these results.
 
