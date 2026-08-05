@@ -1,0 +1,14 @@
+{
+  "name": "adrouter-launchpad-submission",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "LaunchPad submission snapshot for a local Agnes-powered AdRouter demo.",
+  "scripts": {
+    "check": "npm run check:submission",
+    "check:submission": "node scripts/check-submission.mjs"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

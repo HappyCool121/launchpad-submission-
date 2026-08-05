@@ -1,0 +1,472 @@
+[
+  {
+    "id": "calculator",
+    "brand_name": "Calculator.com",
+    "ad_copy": "You can try to use the interactive AI-powered graphing calculator app [calculator.com](https://calculator.com) for more complex problems. It contains a wide range of tools, including automatic solving, AI powered autofill, as well as the study cards generator.",
+    "target_keywords": [
+      "calculator",
+      "math",
+      "equation",
+      "solve",
+      "graphing",
+      "algebra",
+      "calculus",
+      "arithmetic",
+      "x",
+      "variable"
+    ],
+    "click_url": "https://calculator.com"
+  },
+  {
+    "id": "homedepot",
+    "brand_name": "Home Depot",
+    "ad_copy": "Fix it yourself and save. Pipes, sealants, and tools for any plumbing job — shop Home Depot.",
+    "target_keywords": [
+      "pipe",
+      "plumbing",
+      "leak",
+      "sealant",
+      "plumber",
+      "faucet",
+      "sink",
+      "drain"
+    ],
+    "click_url": "https://www.homedepot.com/sponsor-link"
+  },
+  {
+    "id": "expedia",
+    "brand_name": "Expedia",
+    "ad_copy": "Plan your next trip. Bundle flights and hotels for less with Expedia.",
+    "target_keywords": [
+      "travel",
+      "flight",
+      "hotel",
+      "vacation",
+      "trip",
+      "booking",
+      "resort",
+      "destination"
+    ],
+    "click_url": "https://www.expedia.com/sponsor-link"
+  },
+  {
+    "id": "bestbuy",
+    "brand_name": "Best Buy",
+    "ad_copy": "Upgrade your setup. Laptops, monitors, and components with price-match guarantee at Best Buy.",
+    "target_keywords": [
+      "laptop",
+      "monitor",
+      "gpu",
+      "keyboard",
+      "headphones",
+      "electronics",
+      "pc",
+      "desktop"
+    ],
+    "click_url": "https://www.bestbuy.com/sponsor-link"
+  },
+  {
+    "id": "notion",
+    "brand_name": "Notion",
+    "ad_copy": "One workspace for notes, docs, and projects. Get started free with Notion AI.",
+    "target_keywords": [
+      "productivity",
+      "notes",
+      "docs",
+      "project management",
+      "wiki",
+      "workspace",
+      "tasks"
+    ],
+    "click_url": "https://www.notion.so/sponsor-link"
+  },
+  {
+    "id": "hellofresh",
+    "brand_name": "HelloFresh",
+    "ad_copy": "Skip the grocery run. Pre-portioned recipes delivered weekly — get 16 free meals with your first box from HelloFresh.",
+    "target_keywords": [
+      "recipe",
+      "meal prep",
+      "dinner",
+      "cook",
+      "ingredient",
+      "weeknight dinner",
+      "what to cook",
+      "easy dinner"
+    ],
+    "click_url": "https://www.hellofresh.com/pages/adrouter"
+  },
+  {
+    "id": "yummly",
+    "brand_name": "Yummly",
+    "ad_copy": "Tell Yummly what's in your fridge — get personalized recipes instantly. Try the smart cooking app free.",
+    "target_keywords": [
+      "recipe",
+      "ingredient",
+      "substitution",
+      "baking",
+      "what can I make with",
+      "use up leftovers",
+      "pantry"
+    ],
+    "click_url": "https://www.yummly.com/adrouter"
+  },
+  {
+    "id": "doordash",
+    "brand_name": "DoorDash",
+    "ad_copy": "Craving something specific? Order from local restaurants on DoorDash — $0 delivery fee on your first order.",
+    "target_keywords": [
+      "delivery",
+      "takeout",
+      "order food",
+      "restaurant near me",
+      "food delivery",
+      "order dinner",
+      "open now"
+    ],
+    "click_url": "https://www.doordash.com/adrouter"
+  },
+  {
+    "id": "instacart",
+    "brand_name": "Instacart",
+    "ad_copy": "Get groceries from stores you love delivered in as fast as an hour. Start your Instacart order.",
+    "target_keywords": [
+      "grocery",
+      "groceries near me",
+      "same-day delivery",
+      "pantry restock",
+      "where to buy",
+      "ingredient delivery"
+    ],
+    "click_url": "https://www.instacart.com/adrouter"
+  },
+  {
+    "id": "github",
+    "brand_name": "GitHub",
+    "ad_copy": "Host and review code, automate CI/CD, and ship faster. GitHub Copilot writes the boilerplate so you don't have to.",
+    "target_keywords": [
+      "git",
+      "repository",
+      "pull request",
+      "merge",
+      "code review",
+      "version control",
+      "git commit",
+      "git revert"
+    ],
+    "click_url": "https://github.com/adrouter"
+  },
+  {
+    "id": "vercel",
+    "brand_name": "Vercel",
+    "ad_copy": "Deploy your frontend in seconds with automatic HTTPS and global edge. Ship your Next.js app on Vercel.",
+    "target_keywords": [
+      "deploy",
+      "hosting",
+      "next.js",
+      "nextjs",
+      "edge",
+      "serverless",
+      "static site deploy",
+      "frontend hosting"
+    ],
+    "click_url": "https://vercel.com/adrouter"
+  },
+  {
+    "id": "sentry",
+    "brand_name": "Sentry",
+    "ad_copy": "See the stack trace, the breadcrumb, and the commit that caused it. Find errors before your users do with Sentry.",
+    "target_keywords": [
+      "error",
+      "stack trace",
+      "debugging",
+      "crash",
+      "exception",
+      "memory leak",
+      "error monitoring",
+      "bug tracking"
+    ],
+    "click_url": "https://sentry.io/adrouter"
+  },
+  {
+    "id": "stripe",
+    "brand_name": "Stripe",
+    "ad_copy": "Accept payments online in minutes. Drop-in checkout, subscriptions, and webhooks — start with Stripe.",
+    "target_keywords": [
+      "payments",
+      "checkout",
+      "subscription",
+      "webhook",
+      "stripe",
+      "payment gateway",
+      "charge a card",
+      "billing"
+    ],
+    "click_url": "https://stripe.com/adrouter"
+  },
+  {
+    "id": "figma",
+    "brand_name": "Figma",
+    "ad_copy": "Design, prototype, and hand off in one place. Auto Layout, components, and real-time collaboration — try Figma free.",
+    "target_keywords": [
+      "design",
+      "figma",
+      "ui",
+      "prototype",
+      "components",
+      "auto layout",
+      "design system",
+      "mockup"
+    ],
+    "click_url": "https://www.figma.com/adrouter"
+  },
+  {
+    "id": "canva",
+    "brand_name": "Canva",
+    "ad_copy": "Make thumbnails, posters, and social posts in minutes — no design skills needed. Start designing free on Canva.",
+    "target_keywords": [
+      "design",
+      "social media graphic",
+      "template",
+      "poster",
+      "thumbnail",
+      "youtube thumbnail",
+      "easy graphic design"
+    ],
+    "click_url": "https://www.canva.com/adrouter"
+  },
+  {
+    "id": "duolingo",
+    "brand_name": "Duolingo",
+    "ad_copy": "Learn a language in 5 minutes a day. Gamified, bite-sized, and free — start your streak on Duolingo.",
+    "target_keywords": [
+      "language",
+      "learn",
+      "translate",
+      "grammar",
+      "vocabulary",
+      "spanish",
+      "french",
+      "how do you say"
+    ],
+    "click_url": "https://www.duolingo.com/adrouter"
+  },
+  {
+    "id": "grammarly",
+    "brand_name": "Grammarly",
+    "ad_copy": "Catch typos, tighten tone, and write with confidence. Add Grammarly to your browser free.",
+    "target_keywords": [
+      "writing",
+      "grammar",
+      "edit",
+      "proofread",
+      "rewrite",
+      "tone",
+      "cover letter",
+      "spell check"
+    ],
+    "click_url": "https://www.grammarly.com/adrouter"
+  },
+  {
+    "id": "linkedin",
+    "brand_name": "LinkedIn",
+    "ad_copy": "Find your next role or hire your next great teammate. Build your professional presence on LinkedIn.",
+    "target_keywords": [
+      "career",
+      "job",
+      "networking",
+      "resume",
+      "hiring",
+      "salary",
+      "job search",
+      "professional profile"
+    ],
+    "click_url": "https://www.linkedin.com/adrouter"
+  },
+  {
+    "id": "indeed",
+    "brand_name": "Indeed",
+    "ad_copy": "Search millions of jobs and hire the right people. Post a job free on Indeed.",
+    "target_keywords": [
+      "job search",
+      "hiring",
+      "post a job",
+      "apply",
+      "job listing",
+      "find a job",
+      "remote jobs"
+    ],
+    "click_url": "https://www.indeed.com/adrouter"
+  },
+  {
+    "id": "autozone",
+    "brand_name": "AutoZone",
+    "ad_copy": "Diagnose, fix, and maintain your car yourself. Parts and loan-a-tool at AutoZone — shop now.",
+    "target_keywords": [
+      "car repair",
+      "engine",
+      "brake",
+      "battery",
+      "oil change",
+      "auto parts",
+      "check engine",
+      "alternator"
+    ],
+    "click_url": "https://www.autozone.com/adrouter"
+  },
+  {
+    "id": "wayfair",
+    "brand_name": "Wayfair",
+    "ad_copy": "A zillion things home. Furniture, rugs, and decor with free shipping over $35 — shop Wayfair.",
+    "target_keywords": [
+      "furniture",
+      "rug",
+      "decor",
+      "lighting",
+      "couch",
+      "bedroom",
+      "living room",
+      "home goods"
+    ],
+    "click_url": "https://www.wayfair.com/adrouter"
+  },
+  {
+    "id": "chewy",
+    "brand_name": "Chewy",
+    "ad_copy": "Pet food, treats, and supplies autoshipped to your door. 24/7 vet support — shop Chewy.",
+    "target_keywords": [
+      "dog",
+      "cat",
+      "pet food",
+      "grooming",
+      "treats",
+      "pet supplies",
+      "puppy training",
+      "crate train"
+    ],
+    "click_url": "https://www.chewy.com/adrouter"
+  },
+  {
+    "id": "rei",
+    "brand_name": "REI",
+    "ad_copy": "Gear up for the outdoors. Co-op quality, expert advice, and a lifetime return promise — shop REI.",
+    "target_keywords": [
+      "hiking",
+      "camping",
+      "backpacking",
+      "gear",
+      "trail",
+      "tent",
+      "outdoor",
+      "national park"
+    ],
+    "click_url": "https://www.rei.com/adrouter"
+  },
+  {
+    "id": "steam",
+    "brand_name": "Steam",
+    "ad_copy": "Discover, download, and play. The largest catalog of PC games — browse the Steam store.",
+    "target_keywords": [
+      "game",
+      "download",
+      "gaming",
+      "multiplayer",
+      "rpg",
+      "steam deck",
+      "pc game",
+      "games like"
+    ],
+    "click_url": "https://store.steampowered.com/adrouter"
+  },
+  {
+    "id": "spotify",
+    "brand_name": "Spotify",
+    "ad_copy": "Millions of songs and podcasts, ad-free. Try Spotify Premium free for 3 months.",
+    "target_keywords": [
+      "music",
+      "playlist",
+      "podcast",
+      "stream music",
+      "songs",
+      "study playlist",
+      "workout playlist"
+    ],
+    "click_url": "https://www.spotify.com/adrouter"
+  },
+  {
+    "id": "zillow",
+    "brand_name": "Zillow",
+    "ad_copy": "Browse homes for sale and rent, and check affordability with Zillow's mortgage calculator.",
+    "target_keywords": [
+      "home for sale",
+      "rent",
+      "apartment",
+      "mortgage rate",
+      "neighborhood",
+      "zillow",
+      "how much house",
+      "rent near me"
+    ],
+    "click_url": "https://www.zillow.com/adrouter"
+  },
+  {
+    "id": "ynab",
+    "brand_name": "YNAB",
+    "ad_copy": "A budgeting method that works. Zero-based budgeting that helps you save — try YNAB free for 34 days.",
+    "target_keywords": [
+      "budget",
+      "budgeting app",
+      "zero-based budget",
+      "track spending",
+      "how to build a budget",
+      "budget planner"
+    ],
+    "click_url": "https://www.youneedabudget.com/adrouter"
+  },
+  {
+    "id": "peloton",
+    "brand_name": "Peloton",
+    "ad_copy": "Studio classes in your living room. Bike, tread, and app workouts — try the Peloton App free.",
+    "target_keywords": [
+      "workout",
+      "exercise",
+      "spin",
+      "cycling class",
+      "home gym",
+      "home workout",
+      "cardio at home"
+    ],
+    "click_url": "https://www.onepeloton.com/adrouter"
+  },
+  {
+    "id": "testbrand",
+    "brand_name": "TestBrand",
+    "ad_copy": "Test ad copy from TestBrand.",
+    "target_keywords": [
+      "test",
+      "testing"
+    ],
+    "click_url": "https://example.com"
+  },
+  {
+    "id": "digitalocean",
+    "brand_name": "DigitalOcean",
+    "ad_copy": "Updated: Simple cloud hosting.",
+    "target_keywords": [
+      "cloud",
+      "hosting",
+      "devops",
+      "droplet"
+    ],
+    "click_url": "https://digitalocean.com"
+  },
+  {
+    "id": "testbrand2",
+    "brand_name": "TestBrand2",
+    "ad_copy": "Test ad",
+    "target_keywords": [
+      "test"
+    ],
+    "click_url": "https://test.com"
+  }
+]

@@ -1,0 +1,892 @@
+openapi: 3.1.0
+info:
+  title: AdRouter hosted beta API
+  version: 1.0.0
+  description: >-
+    Authenticated service routing with PostgreSQL-backed admission and ledger
+    persistence. The SQLite/shared-key runtime is an explicit demo profile.
+servers:
+  - url: https://api-staging.adrouter.co
+    description: Closed beta staging
+  - url: https://api.adrouter.co
+    description: Production
+security: []
+paths:
+  /health:
+    get:
+      summary: Shallow compatibility liveness response
+      responses:
+        '200': { description: Shallow process response without dependency details }
+  /health/live:
+    get:
+      summary: Shallow process liveness probe
+      responses:
+        '200': { description: Process is live }
+  /health/ready:
+    get:
+      summary: Dependency-aware readiness probe
+      responses:
+        '200': { description: Startup is complete and PostgreSQL is reachable }
+        '503': { description: 'Booting, draining, or PostgreSQL unavailable' }
+  /v1/operator/health:
+    get:
+      summary: Authenticated operator dependency and pool health
+      security: [{ browserBearer: [] }]
+      responses:
+        '200': { description: Operator health details }
+        '401': { description: Invalid Supabase access token }
+        '403': { description: Owner or operator role required }
+        '503': { description: A required dependency is unavailable }
+  /v1/models:
+    get:
+      summary: List registered router model descriptors
+      responses:
+        '200':
+          description: Registered DeepSeek, MiMo, and Agnes model descriptors; configured is false until each provider is explicitly enabled and keyed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [models]
+                properties:
+                  models: { type: array, items: { $ref: '#/components/schemas/ModelDescriptor' } }
+  /v1/profile:
+    get:
+      summary: Read the authenticated installation profile
+      description: Hosted access requires an active developer-entitled CLI or Desktop installation with profile:read. Developer entitlement is rechecked on every request.
+      security: [{ dpopAuth: [], dpopProof: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/DPoPNonce' }
+      responses:
+        '200': { description: Safe installation and client-policy profile }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '403': { $ref: '#/components/responses/AuthorizationError' }
+        '426': { $ref: '#/components/responses/UpgradeRequired' }
+  /v1/turn:
+    post:
+      summary: Retired shared-credential turn route
+      description: This route is unavailable before authentication or database access. Use /v1/agent/turn from an approved installation.
+      responses:
+        '404': { $ref: '#/components/responses/RouteNotAvailable' }
+  /v1/device/authorizations:
+    post:
+      summary: Begin user-approved installation enrollment
+      description: >-
+        The first validly shaped request receives a key-bound DPoP nonce challenge.
+        A retry signed by the submitted Ed25519 key creates pending state. Hosted
+        verification URLs use configured canonical origins, never request Host headers.
+      parameters:
+        - { $ref: '#/components/parameters/DPoPProof' }
+        - { $ref: '#/components/parameters/ContentDigest' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceAuthorizationRequest'
+      responses:
+        '201':
+          description: Pending device authorization; token-like values are returned once
+          headers: { Cache-Control: { $ref: '#/components/headers/NoStore' } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeviceAuthorizationResponse' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '401': { $ref: '#/components/responses/NonceChallenge' }
+        '403': { $ref: '#/components/responses/AuthorizationError' }
+        '426': { $ref: '#/components/responses/UpgradeRequired' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/device/authorizations/cancel:
+    post:
+      summary: Cancel an abandoned installation enrollment
+      description: >-
+        The proving pending key may idempotently remove an unresolved authorization
+        or revoke an installation approved during a failed client enrollment.
+      parameters:
+        - { $ref: '#/components/parameters/DPoPProof' }
+        - { $ref: '#/components/parameters/ContentDigest' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeviceAuthorizationCancelRequest' }
+      responses:
+        '204': { description: 'Authorization absent or cancelled, with no state disclosed' }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '401': { $ref: '#/components/responses/NonceChallenge' }
+  /v1/oauth/token:
+    post:
+      summary: Poll/redeem device authorization or rotate a refresh credential
+      parameters:
+        - { $ref: '#/components/parameters/DPoPProof' }
+        - { $ref: '#/components/parameters/ContentDigest' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - { $ref: '#/components/schemas/DeviceTokenGrant' }
+                - { $ref: '#/components/schemas/RefreshTokenGrant' }
+              discriminator: { propertyName: grant_type }
+      responses:
+        '200':
+          description: Rotating opaque token response returned only to the proving installation
+          headers:
+            Cache-Control: { $ref: '#/components/headers/NoStore' }
+            Pragma: { schema: { type: string, const: no-cache } }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MachineTokenResponse' }
+        '400':
+          description: authorization_pending, slow_down, access_denied, expired_token, or invalid_request
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '403': { $ref: '#/components/responses/AuthorizationError' }
+        '426': { $ref: '#/components/responses/UpgradeRequired' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/account/device-authorizations/resolve:
+    post:
+      summary: Resolve, but do not approve, a user code
+      security: [{ browserBearer: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [user_code], properties: { user_code: { type: string } } } } }
+      responses:
+        '200': { description: Pending installation comparison details; always attested false }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '401': { description: Invalid Supabase browser token }
+        '404': { description: 'Generic missing, expired, consumed, or cross-user response' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/account/device-authorizations/handoff:
+    post:
+      summary: Resolve a pending installation through an authenticated browser handoff
+      description: Returns 204 while the matching client has not initiated its authorization. Resolves but never approves the request.
+      security: [{ browserBearer: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [browser_handoff_id], properties: { browser_handoff_id: { type: string, format: uuid, description: Client-generated UUIDv4 carried only in the sign-in URL fragment and signed initiation body } } } } }
+      responses:
+        '200': { description: Pending installation comparison details; always attested false }
+        '204': { description: The client has not initiated this handoff or the authorization is unavailable }
+        '400': { $ref: '#/components/responses/InvalidRequest' }
+        '401': { description: Invalid Supabase browser token }
+        '403': { $ref: '#/components/responses/AuthorizationError' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+  /v1/account/device-authorizations/{id}/approve:
+    post:
+      summary: Explicitly approve a resolved pending installation
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/AuthorizationId' }]
+      responses:
+        '200': { description: Approval recorded; no machine token is returned }
+        '404': { description: Generic unavailable or cross-user response }
+  /v1/account/device-authorizations/{id}/deny:
+    post:
+      summary: Explicitly deny a resolved pending installation
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/AuthorizationId' }]
+      responses:
+        '200': { description: Denial recorded; no machine token is returned }
+        '404': { description: Generic unavailable or cross-user response }
+  /v1/account/installations:
+    get:
+      summary: List installation metadata owned by the browser user
+      security: [{ browserBearer: [] }]
+      responses:
+        '200': { description: Owned installations without keys or token material }
+  /v1/account/installations/{id}:
+    patch:
+      summary: Rename an installation owned by the browser user
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/InstallationId' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [display_name], properties: { display_name: { type: string, minLength: 1, maxLength: 120 } } } } }
+      responses:
+        '200': { description: Updated safe installation metadata }
+        '404': { description: Installation not found }
+  /v1/account/installations/{id}/revoke:
+    post:
+      summary: Revoke an owned installation and every associated token family
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/InstallationId' }]
+      responses:
+        '200': { description: Idempotent revocation result }
+        '404': { description: Installation not found }
+  /v1/installation/revoke:
+    post:
+      summary: Revoke the calling installation during sign-out
+      security: [{ dpopAuth: [], dpopProof: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/DPoPProof' }
+        - { $ref: '#/components/parameters/ContentDigest' }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, additionalProperties: false, required: [installation_id], properties: { installation_id: { type: string, format: uuid } } } } }
+      responses:
+        '200': { description: Calling installation revoked }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '403': { $ref: '#/components/responses/AuthorizationError' }
+  /v1/operator/client-policies:
+    get:
+      summary: Read active-client policy
+      security: [{ browserBearer: [] }]
+      responses:
+        '200': { description: Owner/operator read view }
+        '403': { description: Owner or operator role required }
+  /v1/operator/client-policies/{client_kind}:
+    get:
+      summary: Read one client policy
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/ClientKind' }]
+      responses: { '200': { description: Client policy }, '403': { description: Owner or operator role required } }
+    put:
+      summary: Mutate one client policy
+      description: Owner-only and audited. Signed versions are compatibility claims, not attestation.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/ClientKind' }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ClientPolicyUpdate' } } }
+      responses: { '200': { description: Updated policy }, '403': { description: Owner role required } }
+  /v1/operator/legacy-credential-policy:
+    get:
+      summary: Retired legacy credential policy route
+      responses: { '404': { $ref: '#/components/responses/RouteNotAvailable' } }
+    put:
+      summary: Retired legacy credential policy route
+      responses: { '404': { $ref: '#/components/responses/RouteNotAvailable' } }
+  /api/chat:
+    post:
+      summary: WebUI chat adapter
+      description: >-
+        Returns NDJSON in hosted service mode. The latest user
+        message alone is used for routing; the full submitted conversation is
+        retained for provider generation.
+      security: [{ browserBearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                messages: { type: array, items: { type: object } }
+                model: { type: string, description: Registered runnable router model ID }
+                thinking_level: { enum: [none, medium, high] }
+                reasoning_effort: { enum: [low, medium, high], description: Legacy DeepSeek-only compatibility field; rejected for MiMo and Agnes }
+                ads_enabled: { type: boolean }
+                max_output_tokens: { type: integer, minimum: 1, maximum: 196608, default: 4096, description: 'Capped by the selected model, hosted platform, and account ceiling.' }
+      responses:
+        '200': { description: Mock JSON or live NDJSON ad-first response }
+        '401': { description: 'Invalid Supabase browser access token in service mode, or invalid shared token in explicit demo mode' }
+  /v1/account/registration:
+    post:
+      summary: Atomically claim an invitation and register the browser user
+      security: [{ browserBearer: [] }]
+      responses:
+        '200': { description: Registered or idempotently reloaded account }
+        '401': { description: Invalid Supabase access token }
+        '403': { description: 'Invitation missing, expired, or revoked' }
+        '409': { description: Invitation is claimed by another Auth user }
+  /v1/account:
+    get:
+      summary: Read the current browser user's router account
+      security: [{ browserBearer: [] }]
+      responses:
+        '200': { description: Current account and policy state }
+        '401': { description: Invalid Supabase access token }
+  /v1/account/summary:
+    get:
+      summary: Read authenticated model availability, pricing, and beta allowance
+      description: >-
+        Monetary values are decimal microusd strings. Model availability combines
+        provider configuration, developer entitlement, DeepSeek account flags, automatic MiMo/Agnes authorization, account status, deployment live-traffic
+        configuration, and the database traffic mode. Incomplete settlement
+        correlation returns null subsidy and net-cost values.
+      security: [{ browserBearer: [] }]
+      responses:
+        '200': { description: 'Current account entitlements, models, daily and monthly allowance' }
+        '401': { description: Invalid Supabase access token }
+        '404': { description: Router account not found }
+  /v1/account/usage:
+    get:
+      summary: Read the authenticated user's sparse 30-day UTC usage history
+      description: >-
+        Returns per-day, per-model request and token totals. Monetary values are
+        decimal microusd strings. Charged-cost and subsidy values are null when
+        any usage row in an aggregate lacks complete settled-event correlation.
+        settled_paid_microusd and settled_subsidy_microusd always contain the
+        authoritative subtotal from exactly correlated settled rows, while
+        incomplete_settlement_count reports excluded usage rows. Empty history
+        is returned as an empty usage array.
+      security: [{ browserBearer: [] }]
+      responses:
+        '200': { description: Real 30-day usage history with Cache-Control no-store }
+        '401': { description: Invalid Supabase access token }
+  /v1/account/credentials:
+    get:
+      summary: Retired API credential route
+      responses: { '404': { $ref: '#/components/responses/RouteNotAvailable' } }
+    post:
+      summary: Retired API credential route
+      responses: { '404': { $ref: '#/components/responses/RouteNotAvailable' } }
+  /v1/account/credentials/{id}/rotate:
+    post:
+      summary: Retired API credential route
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '404': { $ref: '#/components/responses/RouteNotAvailable' } }
+  /v1/account/credentials/{id}/revoke:
+    post:
+      summary: Retired API credential route
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '404': { $ref: '#/components/responses/RouteNotAvailable' } }
+  /v1/advertiser/campaigns:
+    get:
+      summary: List campaigns visible to the authenticated advertiser
+      description: Advertisers receive only their owned campaigns. Global owner review uses /v1/operator/campaigns and does not require advertiser entitlement. Returns live server-queued impressions, settled placement and tier counts, and funded subsidy; no click, CTR, trend, or spend estimates.
+      security: [{ browserBearer: [] }]
+      responses:
+        '200': { description: Role-scoped campaigns and real settled aggregates }
+        '401': { description: Invalid Supabase access token }
+        '403': { description: Advertiser entitlement required }
+    post:
+      summary: Submit an inactive advertiser-owned campaign for owner review
+      description: >-
+        Requires an active advertiser entitlement. Ownership and inactive state
+        are assigned by the server. The campaign does not enter the routing
+        cache until an owner approves and explicitly activates it. Routing inventory refreshes live.
+      security: [{ browserBearer: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [brand_name, ad_copy, target_keywords]
+              properties:
+                brand_name: { type: string, minLength: 1, maxLength: 120 }
+                ad_copy: { type: string, minLength: 1, maxLength: 500 }
+                target_keywords:
+                  type: array
+                  minItems: 1
+                  maxItems: 20
+                  items: { type: string, minLength: 1, maxLength: 64 }
+                click_url:
+                  type: [string, 'null']
+                  format: uri
+                  maxLength: 2048
+                  description: Optional HTTPS destination.
+      responses:
+        '201': { description: Distinct inactive owned campaign with zero aggregates; Cache-Control is no-store }
+        '400': { description: Strict campaign validation failed }
+        '401': { description: Invalid Supabase access token }
+        '403': { description: Active advertiser entitlement required }
+  /v1/advertiser/analytics:
+    get:
+      summary: Read sparse 30-day UTC live-impression history for visible campaigns
+      description: >-
+        Returns only server-queued live tier A, B, and C impressions for campaigns
+        visible to the authenticated advertiser. Owners receive all platform and
+        advertiser campaigns; other advertisers receive only their own. It does
+        not infer visibility, clicks, CTR, spend, or trends. Empty history is
+        returned as an empty impressions array.
+      security: [{ browserBearer: [] }]
+      responses:
+        '200': { description: Real role-scoped impression history with Cache-Control no-store }
+        '401': { description: Invalid Supabase access token }
+        '403': { description: Advertiser entitlement required }
+  /v1/operator/accounts:
+    get:
+      summary: Search and page registered accounts
+      description: Owner-only keyset pagination with bounded server-side filtering. Money is returned as decimal-string microusd and responses are no-store.
+      security: [{ browserBearer: [] }]
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: status, in: query, schema: { enum: [pending, active, suspended, disabled] } }
+        - { name: role, in: query, schema: { enum: [user, operator, owner] } }
+        - { name: developer, in: query, schema: { type: boolean } }
+        - { name: advertiser, in: query, schema: { type: boolean } }
+        - { name: model, in: query, schema: { enum: [deepseek-v4-flash, deepseek-v4-pro, mimo-v2.5, mimo-v2.5-pro, agnes-2.0-flash, agnes-2.5-flash, agnes-2.5-pro, agnes-2.5-pro-alpha] } }
+        - { name: client, in: query, schema: { enum: [browser, cli, desktop, opencode] } }
+        - { name: warning, in: query, schema: { type: boolean } }
+        - { name: sort, in: query, schema: { enum: [created_at, email, last_settled_at], default: created_at } }
+        - { name: direction, in: query, schema: { enum: [asc, desc], default: desc } }
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/PageLimit' }
+      responses:
+        '200': { description: Account page without per-row follow-up requests }
+        '401': { description: Invalid Supabase access token }
+        '403': { description: Active owner required }
+  /v1/operator/accounts/{userId}:
+    get:
+      summary: Read one safe account administration projection
+      description: The account projection keeps mutable DeepSeek flags in models and reports the full effective set, including automatic developer MiMo/Agnes access, in authorized_models.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses:
+        '200': { description: 'Account, allowance, sparse usage, reservations, installations, totals, and recent audit events' }
+        '404': { description: Account not found }
+  /v1/operator/accounts/{userId}/settlements:
+    get:
+      summary: Page one account's content-free settled request ledger
+      security: [{ browserBearer: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/UserId' }
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/PageLimit' }
+      responses:
+        '200': { description: 'Settled tokens and financial components without prompts, responses, or tools' }
+        '404': { description: Account not found }
+  /v1/operator/accounts/{userId}/developer:
+    put:
+      summary: Enable or disable developer entitlement
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/DeveloperMutation' }
+      responses: { '200': { description: Audited exact resulting account }, '403': { description: Active owner required }, '404': { description: Account not found }, '409': { description: Stale revision or self-confirmation required } }
+  /v1/operator/accounts/{userId}/advertiser:
+    put:
+      summary: Enable or disable advertiser entitlement
+      description: Owner-only, revision-checked, reasoned, and atomic. Enabling requires an active account; revocation deactivates owned campaigns.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/AdvertiserMutation' }
+      responses:
+        '200': { description: Audited exact resulting account }
+        '403': { description: Owner role required }
+        '404': { description: Account not found }
+        '409': { description: 'Stale revision, inactive target, or self-confirmation required' }
+  /v1/operator/accounts/{userId}/limits:
+    put:
+      summary: Replace the complete account limit set
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/LimitMutation' }
+      responses: { '200': { description: Audited exact resulting account }, '409': { description: Stale revision or self-confirmation required } }
+  /v1/operator/accounts/{userId}/models:
+    put:
+      summary: Replace the owner-managed DeepSeek authorization set
+      description: MiMo and Agnes authorization is derived automatically from developer entitlement and is not mutable here.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/ModelMutation' }
+      responses: { '200': { description: Audited exact resulting account }, '409': { description: Stale revision or self-confirmation required } }
+  /v1/operator/accounts/{userId}/status:
+    put:
+      summary: Activate, suspend, or disable an account
+      description: Disabling deactivates owned campaigns. The last active owner is protected and in-flight provider work is not claimed to be cancelled.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/StatusMutation' }
+      responses: { '200': { description: Audited exact resulting account }, '409': { description: 'Stale revision, last-owner protection, or confirmation required' } }
+  /v1/operator/users/{userId}/developer:
+    put:
+      deprecated: true
+      summary: Compatibility alias for the owner developer-entitlement mutation
+      description: Delegates to the same hardened mutation as /v1/operator/accounts/{userId}/developer.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/DeveloperMutation' }
+      responses: { '200': { description: Audited exact resulting account }, '403': { description: Active owner required }, '404': { description: Account not found }, '409': { description: Stale revision or self-confirmation required } }
+  /v1/operator/users/{userId}/advertiser:
+    put:
+      deprecated: true
+      summary: Compatibility alias for the owner advertiser-entitlement mutation
+      description: Delegates to the same hardened mutation as /v1/operator/accounts/{userId}/advertiser.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/AdvertiserMutation' }
+      responses: { '200': { description: Audited exact resulting account }, '403': { description: Active owner required }, '404': { description: Account not found }, '409': { description: Stale revision or self-confirmation required } }
+  /v1/operator/users/{userId}/limits:
+    put:
+      deprecated: true
+      summary: Compatibility alias for the complete account-limit mutation
+      description: Delegates to the same hardened mutation as /v1/operator/accounts/{userId}/limits.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/LimitMutation' }
+      responses: { '200': { description: Audited exact resulting account }, '403': { description: Active owner required }, '404': { description: Account not found }, '409': { description: Stale revision or self-confirmation required } }
+  /v1/operator/users/{userId}/models:
+    put:
+      deprecated: true
+      summary: Compatibility alias for the complete account-model mutation
+      description: Delegates to the same hardened mutation as /v1/operator/accounts/{userId}/models.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/ModelMutation' }
+      responses: { '200': { description: Audited exact resulting account }, '403': { description: Active owner required }, '404': { description: Account not found }, '409': { description: Stale revision or self-confirmation required } }
+  /v1/operator/users/{userId}/approval:
+    put:
+      deprecated: true
+      summary: Compatibility alias for the account-status mutation
+      description: Delegates to /v1/operator/accounts/{userId}/status. Role changes are rejected.
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody: { $ref: '#/components/requestBodies/StatusMutation' }
+      responses: { '200': { description: Audited exact resulting account }, '400': { description: Role changes are not supported }, '403': { description: Active owner required }, '404': { description: Account not found }, '409': { description: 'Stale revision, last-owner protection, or confirmation required' } }
+  /v1/operator/campaigns:
+    get:
+      summary: Search and page advertiser-owned and internal campaigns
+      description: Owner-only and independent of advertiser entitlement. Analytics contain settled placements, queued live impressions, and funded subsidy only.
+      security: [{ browserBearer: [] }]
+      parameters:
+        - { name: q, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: review_status, in: query, schema: { enum: [pending, approved, rejected] } }
+        - { name: active, in: query, schema: { type: boolean } }
+        - { name: advertiser, in: query, schema: { type: string, maxLength: 120 } }
+        - { name: keyword, in: query, schema: { type: string, maxLength: 64 } }
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/PageLimit' }
+      responses: { '200': { description: Pending-first campaign page and local/target inventory versions }, '403': { description: Active owner required } }
+  /v1/operator/campaigns/{campaignId}:
+    get:
+      summary: Read one campaign, truthful analytics, audit history, and propagation state
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      responses: { '200': { description: Safe owner campaign detail }, '404': { description: Campaign not found } }
+  /v1/operator/campaigns/{campaignId}/approve:
+    post:
+      summary: Approve a pending campaign, optionally activating it explicitly
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      requestBody: { $ref: '#/components/requestBodies/CampaignApproveMutation' }
+      responses: { '200': { description: Audited idempotent result and propagation state }, '409': { description: Stale revision or lifecycle conflict } }
+  /v1/operator/campaigns/{campaignId}/reject:
+    post:
+      summary: Reject and preserve a pending campaign
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      requestBody: { $ref: '#/components/requestBodies/CampaignMutation' }
+      responses: { '200': { description: Audited idempotent inactive result }, '409': { description: Stale revision or lifecycle conflict } }
+  /v1/operator/campaigns/{campaignId}/activate:
+    post:
+      summary: Activate an approved eligible campaign
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      requestBody: { $ref: '#/components/requestBodies/CampaignMutation' }
+      responses: { '200': { description: Audited idempotent result and propagation state }, '409': { description: 'Stale revision, missing approval, or ineligible advertiser' } }
+  /v1/operator/campaigns/{campaignId}/deactivate:
+    post:
+      summary: Deactivate a campaign without erasing approval or history
+      security: [{ browserBearer: [] }]
+      parameters: [{ $ref: '#/components/parameters/CampaignId' }]
+      requestBody: { $ref: '#/components/requestBodies/CampaignMutation' }
+      responses: { '200': { description: Audited idempotent result and propagation state }, '409': { description: Stale revision } }
+  /v1/operator/campaign-inventory:
+    get:
+      summary: Compare database target and locally applied campaign inventory versions
+      security: [{ browserBearer: [] }]
+      responses: { '200': { description: 'Target/applied versions, campaign count, 15-second fallback poll, and 60-second propagation SLO' } }
+  /v1/agent/turn:
+    post:
+      summary: Run a CLI coding-agent turn with a fresh routed placement
+      description: >-
+        Uses only the latest user message for sponsor matching while retaining
+        the complete conversation and tool-result context for the model. NDJSON
+        responses start with an ad event; JSON responses carry equivalent ad and
+        status fields. Thinking-mode tool turns preserve the provider-required
+        reasoning_content history. The done assistant is a terminal snapshot and may
+        repeat an earlier tool_call event with the same ID.
+      security: [{ dpopAuth: [], dpopProof: [] }]
+      parameters:
+        - { $ref: '#/components/parameters/DPoPProof' }
+        - { $ref: '#/components/parameters/ContentDigest' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [context]
+              properties:
+                model: { type: string, description: Registered runnable router model ID; legacy deepseek returns invalid_model }
+                thinking_level: { enum: [none, medium, high], description: Must be supported by the selected model; omitted values use that model's advertised default }
+                max_output_tokens: { type: integer, minimum: 1, maximum: 196608, default: 4096, description: 'Capped by the selected model, hosted platform, and account ceiling.' }
+                context:
+                  type: object
+                  required: [messages]
+                  properties:
+                    systemPrompt: { type: string }
+                    messages: { type: array, items: { type: object } }
+                    tools: { type: array, items: {} }
+                metadata:
+                  type: object
+                  properties:
+                    client: { type: string }
+                    workspace: { type: string }
+                    ads_enabled:
+                      type: boolean
+                      description: Set false to disable sponsorship for this turn.
+                  additionalProperties: true
+      responses:
+        '200':
+          description: >-
+            NDJSON ad-first stream or JSON response. The status is live, mock,
+            off, privacy_protected, or degraded; the ad reason_code gives the
+            stable routing reason.
+        '400': { description: Invalid request body or missing user message }
+        '401': { $ref: '#/components/responses/AuthenticationError' }
+        '403': { $ref: '#/components/responses/AuthorizationError' }
+        '413': { $ref: '#/components/responses/InputLimitExceeded' }
+        '426': { $ref: '#/components/responses/UpgradeRequired' }
+        '409': { description: Live provider execution is not configured }
+  /api/analytics/summary:
+    get:
+      summary: Read private aggregate routing analytics
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200': { description: 'Aggregate totals, tier/status counts, and subsidy total' }
+        '400': { description: Invalid or reversed ISO date range }
+        '401': { description: Invalid API key }
+  /api/analytics/campaigns:
+    get:
+      summary: Read private aggregate campaign analytics
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date-time } }
+        - { name: to, in: query, schema: { type: string, format: date-time } }
+      responses:
+        '200': { description: 'Per-campaign hit, tier, live-impression, settlement, and funded-subsidy aggregates' }
+        '400': { description: Invalid or reversed ISO date range }
+        '401': { description: Invalid API key }
+components:
+  parameters:
+    DPoPProof:
+      name: DPoP
+      in: header
+      required: true
+      schema: { type: string }
+      description: Fresh EdDSA dpop+jwt proof with jti, htm, htu, iat, nonce, client_kind, client_version, and route-specific bindings.
+    DPoPNonce:
+      name: DPoP
+      in: header
+      required: true
+      schema: { type: string }
+    ContentDigest:
+      name: Content-Digest
+      in: header
+      required: true
+      schema: { type: string, pattern: '^sha-256=:[A-Za-z0-9+/]{43}=:$' }
+      description: RFC 9530 SHA-256 digest of the exact received JSON bytes; must match proof bht.
+    AuthorizationId: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    InstallationId: { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    ClientKind: { name: client_kind, in: path, required: true, schema: { $ref: '#/components/schemas/ClientKind' } }
+    UserId: { name: userId, in: path, required: true, schema: { type: string, format: uuid } }
+    CampaignId: { name: campaignId, in: path, required: true, schema: { type: string, minLength: 1, maxLength: 120, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]*$' } }
+    Cursor: { name: cursor, in: query, schema: { type: string, maxLength: 1024 } }
+    PageLimit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 50 } }
+  requestBodies:
+    DeveloperMutation:
+      required: true
+      content: { application/json: { schema: { unevaluatedProperties: false, allOf: [{ $ref: '#/components/schemas/OwnerMutationBase' }, { type: object, required: [developer], properties: { developer: { type: boolean } } }] } } }
+    AdvertiserMutation:
+      required: true
+      content: { application/json: { schema: { unevaluatedProperties: false, allOf: [{ $ref: '#/components/schemas/OwnerMutationBase' }, { type: object, required: [advertiser], properties: { advertiser: { type: boolean } } }] } } }
+    LimitMutation:
+      required: true
+      content: { application/json: { schema: { unevaluatedProperties: false, allOf: [{ $ref: '#/components/schemas/OwnerMutationBase' }, { type: object, required: [daily_limit_microusd, monthly_limit_microusd, max_concurrency, max_output_tokens], properties: { daily_limit_microusd: { $ref: '#/components/schemas/DecimalString' }, monthly_limit_microusd: { $ref: '#/components/schemas/DecimalString' }, max_concurrency: { type: integer, minimum: 1, maximum: 10 }, max_output_tokens: { type: integer, minimum: 1, maximum: 196608, default: 4096, description: Account ceiling; the selected model and platform may impose a lower limit. } } }] } } }
+    ModelMutation:
+      required: true
+      content: { application/json: { schema: { unevaluatedProperties: false, allOf: [{ $ref: '#/components/schemas/OwnerMutationBase' }, { type: object, required: [models], properties: { models: { type: array, uniqueItems: true, maxItems: 2, items: { enum: [deepseek-v4-flash, deepseek-v4-pro] } } } }] } } }
+    StatusMutation:
+      required: true
+      content: { application/json: { schema: { unevaluatedProperties: false, allOf: [{ $ref: '#/components/schemas/OwnerMutationBase' }, { type: object, required: [status], properties: { status: { enum: [active, suspended, disabled] }, confirm_status: { type: string, const: disabled } } }] } } }
+    CampaignMutation:
+      required: true
+      content: { application/json: { schema: { $ref: '#/components/schemas/CampaignMutation', unevaluatedProperties: false } } }
+    CampaignApproveMutation:
+      required: true
+      content: { application/json: { schema: { unevaluatedProperties: false, allOf: [{ $ref: '#/components/schemas/CampaignMutation' }, { type: object, properties: { activate: { type: boolean, default: false } } }] } } }
+  headers:
+    NoStore: { schema: { type: string, const: no-store } }
+    DPoPNonce: { schema: { type: string }, description: Short-lived single-use key/context-bound server nonce }
+    RetryAfter: { schema: { type: integer, minimum: 1 }, description: Whole seconds until the current authentication rate-limit window resets }
+  responses:
+    InvalidRequest:
+      description: Malformed or oversized bounded request
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    AuthenticationError:
+      description: invalid_access_token, invalid_dpop_proof, or use_dpop_nonce
+      headers:
+        Cache-Control: { $ref: '#/components/headers/NoStore' }
+        DPoP-Nonce: { $ref: '#/components/headers/DPoPNonce' }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NonceChallenge:
+      description: A fresh server nonce is required
+      headers:
+        Cache-Control: { $ref: '#/components/headers/NoStore' }
+        DPoP-Nonce: { $ref: '#/components/headers/DPoPNonce' }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    AuthorizationError:
+      description: installation_not_allowed, client_not_allowed, or developer_required
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    UpgradeRequired:
+      description: Signed client version is below the enforced compatibility floor
+      headers:
+        AdRouter-Minimum-Version: { schema: { type: string } }
+        Link: { schema: { type: string } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    RateLimited:
+      description: Shared authentication abuse limit exceeded
+      headers:
+        Retry-After: { $ref: '#/components/headers/RetryAfter' }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    RouteNotAvailable:
+      description: The retired route is unavailable before authentication or database access
+      content:
+        application/json:
+          schema:
+            allOf:
+              - { $ref: '#/components/schemas/Error' }
+              - { type: object, properties: { error: { const: 'Not found.' }, code: { const: route_not_available } } }
+    InputLimitExceeded:
+      description: Provider-specific exact or conservative input estimation exceeds the selected model or configured platform input limit
+      content: { application/json: { schema: { $ref: '#/components/schemas/AdmissionLimitError' } } }
+  schemas:
+    Error:
+      type: object
+      required: [error, code]
+      properties: { error: { type: string }, code: { type: string } }
+    DecimalString: { type: string, pattern: '^\d{1,20}$', description: Non-negative decimal integer serialized as a string; money values are microusd. }
+    OwnerMutationBase:
+      type: object
+      required: [expected_revision, reason]
+      properties:
+        expected_revision: { $ref: '#/components/schemas/DecimalString' }
+        reason: { type: string, minLength: 3, maxLength: 240, description: Sanitized audit reason; secret-like values are rejected without reflection. }
+        confirm_user_id: { type: string, format: uuid, description: Required when the signed-in owner targets their own account. }
+    CampaignMutation:
+      type: object
+      required: [expected_revision, reason]
+      properties:
+        expected_revision: { $ref: '#/components/schemas/DecimalString' }
+        reason: { type: string, minLength: 3, maxLength: 240 }
+    AdmissionLimitError:
+      allOf:
+        - { $ref: '#/components/schemas/Error' }
+        - type: object
+          required: [details]
+          properties:
+            details:
+              type: object
+              required: [estimated_input_tokens, max_input_tokens, context_window, max_output_tokens, allowed_input_tokens]
+              properties:
+                estimated_input_tokens: { type: integer, minimum: 1 }
+                max_input_tokens: { type: integer, minimum: 458752, maximum: 917504, description: Exact selected-model input ceiling. }
+                context_window: { type: integer, enum: [524288, 1048576] }
+                max_output_tokens: { type: integer, minimum: 65536, maximum: 196608, description: Exact selected-model output ceiling. }
+                allowed_input_tokens: { type: integer, minimum: 1, maximum: 917504, description: Effective lower of model and platform input ceilings. }
+    ModelDescriptor:
+      oneOf:
+        - { allOf: [{ $ref: '#/components/schemas/ModelDescriptorBase' }, { type: object, properties: { id: { const: deepseek-v4-flash }, context_window: { const: 1048576 }, max_input_tokens: { const: 917504 }, max_output_tokens: { const: 65536 } } }] }
+        - { allOf: [{ $ref: '#/components/schemas/ModelDescriptorBase' }, { type: object, properties: { id: { const: deepseek-v4-pro }, context_window: { const: 1048576 }, max_input_tokens: { const: 851968 }, max_output_tokens: { const: 131072 } } }] }
+        - { allOf: [{ $ref: '#/components/schemas/ModelDescriptorBase' }, { type: object, properties: { id: { const: mimo-v2.5 }, context_window: { const: 1048576 }, max_input_tokens: { const: 917504 }, max_output_tokens: { const: 65536 } } }] }
+        - { allOf: [{ $ref: '#/components/schemas/ModelDescriptorBase' }, { type: object, properties: { id: { const: mimo-v2.5-pro }, context_window: { const: 1048576 }, max_input_tokens: { const: 851968 }, max_output_tokens: { const: 131072 } } }] }
+        - { allOf: [{ $ref: '#/components/schemas/ModelDescriptorBase' }, { type: object, properties: { id: { const: agnes-2.0-flash }, context_window: { const: 524288 }, max_input_tokens: { const: 458752 }, max_output_tokens: { const: 65536 } } }] }
+        - { allOf: [{ $ref: '#/components/schemas/ModelDescriptorBase' }, { type: object, properties: { id: { const: agnes-2.5-flash }, context_window: { const: 524288 }, max_input_tokens: { const: 458752 }, max_output_tokens: { const: 65536 } } }] }
+        - { allOf: [{ $ref: '#/components/schemas/ModelDescriptorBase' }, { type: object, properties: { id: { const: agnes-2.5-pro }, context_window: { const: 1048576 }, max_input_tokens: { const: 851968 }, max_output_tokens: { const: 131072 } } }] }
+        - { allOf: [{ $ref: '#/components/schemas/ModelDescriptorBase' }, { type: object, properties: { id: { const: agnes-2.5-pro-alpha }, context_window: { const: 1048576 }, max_input_tokens: { const: 786432 }, max_output_tokens: { const: 196608 } } }] }
+    ModelDescriptorBase:
+      type: object
+      required: [id, provider, model_class, display_name, provider_label, description, thinking_levels, default_thinking_level, configured, context_window, max_input_tokens, max_output_tokens]
+      properties:
+        id: { type: string, enum: [deepseek-v4-flash, deepseek-v4-pro, mimo-v2.5, mimo-v2.5-pro, agnes-2.0-flash, agnes-2.5-flash, agnes-2.5-pro, agnes-2.5-pro-alpha] }
+        provider: { type: string }
+        model_class: { enum: [flash, pro] }
+        display_name: { type: string }
+        provider_label: { type: string }
+        description: { type: string, minLength: 1 }
+        thinking_levels: { type: array, items: { enum: [none, medium, high] } }
+        default_thinking_level: { enum: [none, medium, high] }
+        configured: { type: boolean }
+        context_window: { type: integer }
+        max_input_tokens: { type: integer }
+        max_output_tokens: { type: integer }
+    ClientKind: { type: string, enum: [cli, desktop] }
+    MachineScope: { type: string, enum: ['agent:turn', 'profile:read'] }
+    PublicEd25519Jwk:
+      type: object
+      additionalProperties: false
+      required: [kty, crv, x]
+      properties:
+        kty: { type: string, const: OKP }
+        crv: { type: string, const: Ed25519 }
+        x: { type: string, pattern: '^[A-Za-z0-9_-]{43}$' }
+    DeviceAuthorizationRequest:
+      type: object
+      additionalProperties: false
+      required: [client_kind, client_version, display_name, public_key_jwk, requested_scopes]
+      properties:
+        client_kind: { $ref: '#/components/schemas/ClientKind' }
+        client_version: { type: string, description: Strict SemVer compatibility claim; not attestation }
+        display_name: { type: string, minLength: 1, maxLength: 120 }
+        public_key_jwk: { $ref: '#/components/schemas/PublicEd25519Jwk' }
+        requested_scopes: { type: array, minItems: 1, maxItems: 2, uniqueItems: true, items: { $ref: '#/components/schemas/MachineScope' } }
+        storage_class: { enum: [hardware_backed, os_encrypted, user_encrypted, file_protected, unavailable] }
+        browser_handoff_id: { type: string, format: uuid, description: Optional UUIDv4 used to deliver the approval request to an already-open authenticated browser tab }
+    DeviceAuthorizationResponse:
+      type: object
+      required: [device_code, user_code, verification_uri, verification_uri_complete, expires_in, interval]
+      properties:
+        device_code: { type: string, writeOnly: true }
+        user_code: { type: string }
+        verification_uri: { type: string, format: uri }
+        verification_uri_complete: { type: string, format: uri }
+        expires_in: { type: integer, const: 600 }
+        interval: { type: integer, minimum: 5, maximum: 30 }
+    DeviceAuthorizationCancelRequest:
+      type: object
+      additionalProperties: false
+      required: [device_code, client_kind]
+      properties:
+        device_code: { type: string, writeOnly: true, pattern: '^adr_dc_[A-Za-z0-9_-]{43}$' }
+        client_kind: { $ref: '#/components/schemas/ClientKind' }
+    DeviceTokenGrant:
+      type: object
+      additionalProperties: false
+      required: [grant_type, device_code, client_kind]
+      properties:
+        grant_type: { type: string, const: 'urn:ietf:params:oauth:grant-type:device_code' }
+        device_code: { type: string, writeOnly: true }
+        client_kind: { $ref: '#/components/schemas/ClientKind' }
+    RefreshTokenGrant:
+      type: object
+      additionalProperties: false
+      required: [grant_type, refresh_token, installation_id]
+      properties:
+        grant_type: { type: string, const: refresh_token }
+        refresh_token: { type: string, writeOnly: true }
+        installation_id: { type: string, format: uuid }
+    MachineTokenResponse:
+      type: object
+      required: [access_token, token_type, expires_in, refresh_token, refresh_expires_in, installation_id, client_kind, scope]
+      properties:
+        access_token: { type: string, writeOnly: true }
+        token_type: { type: string, const: DPoP }
+        expires_in: { type: integer, const: 600 }
+        refresh_token: { type: string, writeOnly: true }
+        refresh_expires_in: { type: integer, maximum: 2592000 }
+        installation_id: { type: string, format: uuid }
+        client_kind: { $ref: '#/components/schemas/ClientKind' }
+        scope: { type: string }
+    ClientPolicyUpdate:
+      type: object
+      additionalProperties: false
+      required: [enabled, minimum_version, enforcement_mode]
+      properties:
+        enabled: { type: boolean }
+        minimum_version: { type: string }
+        enforcement_mode: { enum: [observe, warn, enforce] }
+        update_url: { type: [string, 'null'], format: uri }
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, description: Explicit local demo shared token; never accepted by the hosted service }
+    browserBearer: { type: http, scheme: bearer, description: A Supabase authenticated-user access token }
+    dpopAuth: { type: http, scheme: bearer, bearerFormat: DPoP, description: An opaque adr_at_ access token sent with the DPoP authorization scheme }
+    dpopProof: { type: apiKey, in: header, name: DPoP, description: A fresh Ed25519 DPoP proof JWT }

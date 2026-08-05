@@ -1,0 +1,47 @@
+{
+  "fixture_version": "platform-auth-v1",
+  "notice": "All key and token material in this file is deterministic non-secret test data.",
+  "public_jwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "UlKbZgyQvgYp9JgM5TjARwtU5ClgVOi2lTGtJo5Y1d4"
+  },
+  "test_private_jwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "UlKbZgyQvgYp9JgM5TjARwtU5ClgVOi2lTGtJo5Y1d4",
+    "d": "bSrI4RHnZ8LLPgqWAFWxg97jFlf44QRuDQVGykTKetQ"
+  },
+  "jwk_thumbprint": "HJ5Y_Jk2riR7we8jGvWcDUMkM0ewP5U47Cac5E5t82c",
+  "non_secret_test_access_token": "adr_at_BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc",
+  "access_token_sha256_base64url": "wSj6p4T6MzMRss0Jc-jZgFeZy7DF7E7f8BfSthcn8HE",
+  "method": "POST",
+  "normalized_htu": "https://api.example.test/v1/agent/turn",
+  "raw_body_utf8": "{\"fixture\":\"platform-auth-v1\"}",
+  "content_digest": "sha-256=:CeeKfCXkkznUoKlRhKutT85cid7Q08Xyvfbrlz5GoTo=:",
+  "bht": "CeeKfCXkkznUoKlRhKutT85cid7Q08Xyvfbrlz5GoTo",
+  "claims": {
+    "jti": "CQkJCQkJCQkJCQkJCQkJCQ",
+    "htm": "POST",
+    "htu": "https://api.example.test/v1/agent/turn",
+    "iat": 1785148800,
+    "ath": "wSj6p4T6MzMRss0Jc-jZgFeZy7DF7E7f8BfSthcn8HE",
+    "nonce": "adr_nonce_CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg",
+    "bht": "CeeKfCXkkznUoKlRhKutT85cid7Q08Xyvfbrlz5GoTo",
+    "client_kind": "cli",
+    "client_version": "0.82.0"
+  },
+  "proof_jwt": "eyJ0eXAiOiJkcG9wK2p3dCIsImFsZyI6IkVkRFNBIiwiandrIjp7ImNydiI6IkVkMjU1MTkiLCJ4IjoiVWxLYlpneVF2Z1lwOUpnTTVUakFSd3RVNUNsZ1ZPaTJsVEd0Sm81WTFkNCIsImt0eSI6Ik9LUCJ9fQ.eyJqdGkiOiJDUWtKQ1FrSkNRa0pDUWtKQ1FrSkNRIiwiaHRtIjoiUE9TVCIsImh0dSI6Imh0dHBzOi8vYXBpLmV4YW1wbGUudGVzdC92MS9hZ2VudC90dXJuIiwiaWF0IjoxNzg1MTQ4ODAwLCJhdGgiOiJ3U2o2cDRUNk16TVJzczBKYy1qWmdGZVp5N0RGN0U3ZjhCZlN0aGNuOEhFIiwibm9uY2UiOiJhZHJfbm9uY2VfQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZ0lDQWdJQ0FnSUNBZyIsImJodCI6IkNlZUtmQ1hra3puVW9LbFJoS3V0VDg1Y2lkN1EwOFh5dmZicmx6NUdvVG8iLCJjbGllbnRfa2luZCI6ImNsaSIsImNsaWVudF92ZXJzaW9uIjoiMC44Mi4wIn0.6834HX2TH9DZdyRoTMYO-E3vvTzbqBmB2I9okLtfumnUmc8GufZXTcq8hoAz2iXYPgy3WRMSJKGcZjdjdHBfDw",
+  "negative_vectors": [
+    { "name": "private_jwk_submitted", "mutation": "add d to public_jwk", "expected_code": "invalid_request" },
+    { "name": "wrong_method", "mutation": "set htm to GET", "expected_code": "invalid_dpop_proof" },
+    { "name": "wrong_url", "mutation": "change htu path or origin", "expected_code": "invalid_dpop_proof" },
+    { "name": "wrong_access_hash", "mutation": "change ath", "expected_code": "invalid_dpop_proof" },
+    { "name": "tampered_body", "mutation": "append one byte to raw_body_utf8", "expected_code": "invalid_dpop_proof" },
+    { "name": "wrong_nonce", "mutation": "replace nonce", "expected_code": "use_dpop_nonce" },
+    { "name": "replayed_jti", "mutation": "submit the same proof twice", "expected_code": "invalid_dpop_proof" },
+    { "name": "wrong_client_kind", "mutation": "set client_kind to desktop", "expected_code": "invalid_dpop_proof" },
+    { "name": "malformed_version", "mutation": "set client_version to 01.0.0", "expected_code": "invalid_dpop_proof" },
+    { "name": "future_iat", "mutation": "move iat beyond configured skew", "expected_code": "invalid_dpop_proof" }
+  ]
+}

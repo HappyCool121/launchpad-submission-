@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "bundles": [
+    {
+      "manifest": {
+        "schemaVersion": 1,
+        "id": "adrouter-safe-development",
+        "version": "1.0.0",
+        "minimumAgentVersion": "0.1.0-beta.12",
+        "entries": [
+          {
+            "kind": "instruction",
+            "id": "safe-development",
+            "title": "Safe development workflow",
+            "path": "instructions/safe-development.md",
+            "digest": "f9768031fa675d10ec66b5f087b235ddd4b62946a09ef05c182bdf700026eaef"
+          },
+          {
+            "kind": "skill",
+            "id": "dependency-safety",
+            "title": "Dependency safety",
+            "path": "skills/dependencies.md",
+            "digest": "d5af5387897a650dcf6f1050aa764c978aeade308d12a71c56ce7c29280b4189"
+          },
+          {
+            "kind": "prompt",
+            "id": "review-risks",
+            "title": "Review risks",
+            "path": "prompts/review.md",
+            "digest": "19e57dfa8a3fd44fc9fb8d3931738b37a4868eb0fa8745e73330dc67a95b81df"
+          }
+        ],
+        "aggregateDigest": "455868a2500beb1d31fb595f7745c35713745dd4fb873351b03575b690e2aa49"
+      },
+      "entries": [
+        {
+          "kind": "instruction",
+          "id": "safe-development",
+          "title": "Safe development workflow",
+          "path": "instructions/safe-development.md",
+          "digest": "f9768031fa675d10ec66b5f087b235ddd4b62946a09ef05c182bdf700026eaef",
+          "content": "Follow the repository's instructions and prefer focused, reversible changes. Verify mutations with the smallest relevant checks before broader gates."
+        },
+        {
+          "kind": "skill",
+          "id": "dependency-safety",
+          "title": "Dependency safety",
+          "path": "skills/dependencies.md",
+          "digest": "d5af5387897a650dcf6f1050aa764c978aeade308d12a71c56ce7c29280b4189",
+          "content": "When changing dependencies, use the structured preview and apply workflow. Never run lifecycle scripts unless the user separately approves the exact script."
+        },
+        {
+          "kind": "prompt",
+          "id": "review-risks",
+          "title": "Review risks",
+          "path": "prompts/review.md",
+          "digest": "19e57dfa8a3fd44fc9fb8d3931738b37a4868eb0fa8745e73330dc67a95b81df",
+          "content": "For code reviews, report concrete correctness, security, and regression risks with file evidence. Do not mutate the workspace unless explicitly asked."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+name: offline-submission-checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+      - run: npm run check:submission
+
+  router:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: router
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+          cache-dependency-path: router/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run test:launchpad
+      - run: npm run test:launchpad:integration
+      - run: npm test
+      - run: npm run build
+
+  cli:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: adrouterCLI
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+          cache-dependency-path: adrouterCLI/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run check:submission
+      - run: npm run test --workspace @adrouter/ai -- test/adrouter.test.ts test/adrouter-config.test.ts
+      - run: npm run test --workspace @adrouter/cli -- test/adrouter-ad-panel.test.ts test/adrouter-session.test.ts
+
+  agent:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: adrouterAgent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25.9.0
+          cache: npm
+          cache-dependency-path: adrouterAgent/package-lock.json
+      - run: npm ci
+      - run: npm run check:submission

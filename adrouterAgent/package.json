@@ -1,0 +1,92 @@
+{
+  "name": "adrouter-agent",
+  "productName": "AdRouter Agent",
+  "version": "0.1.0-beta.12",
+  "description": "A secure, local-first desktop coding agent routed through AdRouter.",
+  "license": "Apache-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adrouter/adrouterAgent.git"
+  },
+  "main": ".vite/build/main.js",
+  "scripts": {
+    "dev": "electron-forge start",
+    "dev:launchpad": "LAUNCHPAD_SUBMISSION=true electron-forge start",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "make:mac": "electron-forge make --platform=darwin --arch=universal",
+    "make:linux": "electron-forge make --platform=linux --arch=x64",
+    "make:windows": "electron-forge make --platform=win32 --arch=x64",
+    "postinstall": "node scripts/apply-dependency-overrides.mjs",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "pretest": "npm rebuild electron && node -e \"require('electron')\"",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "node scripts/run-e2e.mjs",
+    "catalog:check": "node scripts/check-model-catalog.mjs",
+    "bundles:check": "node scripts/check-bundle-catalog.mjs",
+    "check:submission": "npm run typecheck && vitest run --config vitest.config.ts && vitest run --config vitest.integration.config.ts && npm run catalog:check && npm run bundles:check && node scripts/check-submission.mjs",
+    "audit:build": "node scripts/check-build-audit.mjs",
+    "check:dependency-overrides": "node scripts/check-dependency-overrides.mjs",
+    "check:public": "npm run catalog:check && npm run bundles:check && node scripts/check-dependency-overrides.mjs && node scripts/check-public-boundary.mjs && node scripts/check-docs.mjs",
+    "check": "npm run check:submission"
+  },
+  "dependencies": {
+    "@anthropic-ai/sandbox-runtime": "0.0.65",
+    "@earendil-works/pi-agent-core": "0.80.6",
+    "@earendil-works/pi-ai": "0.80.6",
+    "@earendil-works/pi-coding-agent": "0.80.6",
+    "@monaco-editor/react": "4.7.0",
+    "lucide-react": "0.546.0",
+    "monaco-editor": "0.55.1",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-markdown": "10.1.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.3",
+    "@electron-forge/cli": "7.11.2",
+    "@electron-forge/maker-zip": "7.11.2",
+    "@electron-forge/plugin-auto-unpack-natives": "7.11.2",
+    "@electron-forge/plugin-fuses": "7.11.2",
+    "@electron-forge/plugin-vite": "7.11.2",
+    "@electron-forge/shared-types": "7.11.2",
+    "@electron/fuses": "1.8.0",
+    "@playwright/test": "1.61.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.1",
+    "@types/node": "26.1.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.2.0",
+    "acorn": "8.17.0",
+    "adrouter-brace-expansion-patch": "npm:brace-expansion@5.0.8",
+    "adrouter-protobufjs-patch": "npm:protobufjs@7.6.5",
+    "electron": "43.1.0",
+    "jsdom": "29.1.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.6",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=25.0.0 <26",
+    "npm": ">=10"
+  },
+  "overrides": {
+    "@earendil-works/pi-coding-agent": {
+      ".": "$@earendil-works/pi-coding-agent",
+      "brace-expansion": "5.0.8",
+      "protobufjs": "7.6.5"
+    },
+    "dompurify": "3.4.12",
+    "tar": "7.5.22",
+    "tmp": "0.2.7"
+  }
+}
